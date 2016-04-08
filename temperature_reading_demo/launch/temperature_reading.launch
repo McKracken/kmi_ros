@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+	<arg name="file" default="lab_temperatures.csv"/>
+	<arg name="host" default="10.42.0.93"/>
+	<arg name="port" default="8001"/>
+  	<node name="irobotcreate2" pkg="irobotcreate2" type="irobotcreate2_our" required="true" output="screen"/>
+ 	<node name="dht22_server" pkg="temperature_node" respawn="true" type="dht22_server.py" output="screen">
+		<param name="h" value="$(arg host)" />
+		<param name="p" value="$(arg port)" />
+	</node>
+  	<node name="temperature_locator" pkg="temperature_reading_demo"  type="temperature_locator.py" output="screen">
+		<param name="f" value="$(arg file)"/>
+	</node>
+	
+  	<node name="turn_when_hitting" pkg="temperature_reading_demo" type="turn_when_hitting.py" output="screen"/>
+</launch>

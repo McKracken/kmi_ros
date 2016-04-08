@@ -1,0 +1,8 @@
+<launch>
+	<arg name="host" default="10.42.0.93"/>
+	<arg name="port" default="8001"/>
+ 	<node name="dht22_server" pkg="temperature_node" respawn="true" type="dht22_server.py" output="screen">
+		<param name="h" value="$(arg host)" />
+		<param name="p" value="$(arg port)" />
+	</node>
+</launch>
