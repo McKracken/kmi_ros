@@ -17,7 +17,7 @@ class ActivityManager(object):
 		print "Initialising node"
 		# initnode 
 		rospy.init_node('activity_manager')
-		rospy.wait_for_service('dht22_ask_temperature')
+		#rospy.wait_for_service('dht22_ask_temperature')
 
 		self.current_plan = None
 		
@@ -45,7 +45,6 @@ class ActivityManager(object):
 		self.actual_position_subscriber = rospy.Subscriber('/move_base/feedback', MoveBaseActionFeedback, self.actual_coord_callback , queue_size=1)
 	
 	def actual_coord_callback(self,data):
-		print data
 		self.x = data.feedback.base_position.pose.position.x
 		self.y = data.feedback.base_position.pose.position.y
 		self.theta = 0#data.feedback.base_position.pose.position.z
@@ -131,7 +130,7 @@ class ActivityManager(object):
                         	wifi['name']=line.strip()[7:-1]
         	os.system("rm wifi.txt")
         	wifi_json=json.dumps(cells, sort_keys=True, indent= 2, separators=(",",":"))
-		
+		print wifi_json
 		return wifi_json		
 
 	def read_temperature(self):
