@@ -65,6 +65,8 @@ class ActivityManager(object):
 	def cancel_goal(self):
 		#self.simple_action_client.cancel_all_goals() 
 		print "I am stopping..."
+		self.plan_stack = []
+
 	
 	def is_idle(self):
 		if len(self.plan_stack) == 0: 
@@ -87,11 +89,10 @@ class ActivityManager(object):
 		else : print "Sorry %s not recognised" %action
 		time.sleep(20)
 	
-	def execute_plan(self,plan):
-            	print  "Creating plan %s" % plan
-		self.current_plan = plan
-
-		self.plan_stack = json.loads(plan)
+	def execute_plan(self):
+            	#print  "Creating plan %s" % plan
+		#self.current_plan = plan
+		#self.plan_stack = json.loads(plan)
 	
 		while len(self.plan_stack) > 0:
 			self.current_action = self.plan_stack[0]
@@ -189,6 +190,9 @@ class ActivityManager(object):
 			return False 
 
 
+
+
+import threading
 from flask import Flask, request
 app = Flask(__name__)
 activity_manager = ActivityManager()
@@ -201,7 +205,7 @@ def index():
 def where_are_you():
 	if request.method == 'GET':
 		# where are you
-		return '%s' % activity_manager.where_am_i(),200
+		return '%s\n' % activity_manager.where_am_i(),200
 
 @app.route('/update', methods = ['POST'])
 def update():
@@ -211,30 +215,38 @@ def update():
 		return "",200
 	else : return 204 # TODO : handle errors
 
+
+def execute_plan(am):
+	am.execute_plan()
+	
 @app.route('/do', methods=['POST', 'GET','DELETE'])
 def do():
 	if request.method == 'POST':
         	plan = request.form['p']
 		if not activity_manager.is_idle():
-			#print plan 
-			activity_manager.execute_plan(plan)
-			return "Ok.\n", 201
+			#activity_manager.execute_plan(plan)
+			activity_manager.current_plan = plan
+                	activity_manager.plan_stack = json.loads(plan)
+			thr = threading.Thread(target=execute_plan, args=(activity_manager,))
+			thr.start()
+			return "Process started: %s.\n" % thr.is_alive(), 201
         	else :
-            		print  "Sorry, I am busy"
+            		print  "Sorry, I am busy."
 			return "Idle.\n", 406 # idle
     	elif request.method == 'DELETE':
 		activity_manager.cancel_goal()
-         	return "",204 
+         	return "",204
     	else :
         	# it is GET
-        	if activity_manager.is_idle():
+        	if not activity_manager.is_idle():
 			print "Doing nothing."
-            		return 'Doing nothing',204 
+            		return 'Doing nothing\n',204 
         	else : 
 			print "Remaining %s" % activity_manager.plan_stack 
-			#return activity_manager.plan_stack , 200
-			return 'Last action performed: %s\n' % activity_manager.current_action , 200 # TODO check it is correct
+			resp = str(activity_manager.current_action)
+			resp = resp.replace("u'", "'")
+			return resp+"\n", 200 
 	
 if __name__ == '__main__':
 	print "Starting server"
-	app.run(debug=True, use_reloader=False, host='0.0.0.0')
+	app.run(debug=True,use_reloader=False,threaded=True, host='0.0.0.0')
