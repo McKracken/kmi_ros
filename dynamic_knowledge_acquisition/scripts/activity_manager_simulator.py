@@ -13,7 +13,7 @@ import os
 import codecs
 from move_base_msgs.msg import *
 import actionlib
-import urllib
+import urllib,urllib2
 from temperature_node.msg import *
 from temperature_node.srv import *
 
@@ -80,12 +80,12 @@ class ActivityManager(object):
 			self.goto(action)		
 		elif 'temp' in action['name']:
 			temp = self.read_temperature()
-			self.update_temperature(temp)
+			self.update('temperature',temp)
 		elif "wifi" in action['name']:
 			self.sniff_wifi(action['iface'])
 		elif "humidity" in action['name']:
 			humidity = self.read_humidity()
-			self.update_humidity(humidity)
+			self.update('humidity',humidity)
 		else : print "Sorry %s not recognised" %action
 		time.sleep(20)
 	
@@ -127,10 +127,11 @@ class ActivityManager(object):
 		print "Action CLient Result "+ str(self.simple_action_client.get_result()) 
 		"""
 		print "Going to %s, %s, %s" % (coords['x'],coords['y'], coords['t'])
-		print "Waiting 10 secs"
-		time.sleep(10)
+		print "Waiting 3 secs"
+		time.sleep(3)
 
 	def sniff_wifi(self,interface):
+		
 		cells = list()
 	        os.system("sudo iwlist %s scan > wifi.txt" % interface)
         	fopen = codecs.open("wifi.txt", "r", "utf-8")
@@ -149,8 +150,10 @@ class ActivityManager(object):
                         	wifi['name']=line.strip()[7:-1]
         	os.system("rm wifi.txt")
         	wifi_json=json.dumps(cells, sort_keys=True, indent= 2, separators=(",",":"))
-		print wifi_json
+		print wifi_json # TODO agree on return
 		return wifi_json		
+		
+		print 'hello'
 
 	def read_temperature(self):
     		try:
@@ -166,31 +169,22 @@ class ActivityManager(object):
                 except rospy.ServiceException, e:
                         print "Service call failed: %s"%e
 	
-	def update_humidity(self,hum):
-		print hum
-		params = urllib.urlencode({'humidity': hum, 'X': self.x, 'Y': self.y})
-		try: 
-			f = urllib.urlopen("http://www.sparqlEP.org", params)
-			print f.read()
-			print "Remember Sparql endpoint."
+	def update(self,field,value):
+		print field,':',value
+		params = {'field': field, 'value': value, 'x': self.x, 'y': self.y, 'theta': self.theta}
+		params_json = json.dumps(params, sort_keys=True, indent= 2, separators=(",",":"))
+		print "a"
+		params_encoded = urllib.urlencode({'d': params_json})
+		try:
+			print "open" 
+			f = urllib.urlopen("http://137.108.118.5:8080/bot/write", params_encoded)
+			print "clo"
+			print "Updated response...",f.read()
 			return True
 		except IOError, e:
-			print "Remember Sparql endpoint."
+			print "Error %s" %str(e)
 			return False 
-
-
-	def update_temperature(self,temp):
-		print temp
-		params = urllib.urlencode({'temperature': temp, 'X': self.x, 'Y': self.y})
-		try: 
-			f = urllib.urlopen("http://www.sparqlEP.org", params)
-			print f.read()
-			return True
-		except IOError, e:
-			return False 
-
-
-
+		
 
 import threading
 from flask import Flask, request
@@ -200,6 +194,11 @@ activity_manager = ActivityManager()
 @app.route('/')
 def index():
 	return 'Please specify action\n'
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
 
 @app.route('/whereareyou', methods = ["GET"])
 def where_are_you():
@@ -215,6 +214,12 @@ def update():
 		return "",200
 	else : return 204 # TODO : handle errors
 
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
 
 def execute_plan(am):
 	am.execute_plan()
