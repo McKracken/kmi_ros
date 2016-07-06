@@ -24,7 +24,7 @@ class ActivityManager(object):
 		print "Initialising node"
 		# initnode 
 		rospy.init_node('activity_manager')
-		rospy.wait_for_service('dht22_ask_temperature')
+		#rospy.wait_for_service('dht22_ask_temperature')
 
 		self.current_plan = []
 		
