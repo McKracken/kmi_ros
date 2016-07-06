@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+######
+# simulator without the robot
+#####
+
+
 import rospy
 import time
 import json
@@ -8,6 +13,8 @@ import os
 import codecs
 from move_base_msgs.msg import *
 import actionlib
+import urllib,urllib2
+import requests
 from temperature_node.msg import *
 from temperature_node.srv import *
 
@@ -17,24 +24,24 @@ class ActivityManager(object):
 		print "Initialising node"
 		# initnode 
 		rospy.init_node('activity_manager')
-		#rospy.wait_for_service('dht22_ask_temperature')
+		rospy.wait_for_service('dht22_ask_temperature')
 
-		self.current_plan = None
+		self.current_plan = []
 		
 		# plan_stack is a json object
 		self.plan_stack = list()
 		self.current_action = ""
 
 		# actuasl postion
-		self.x = 0
-		self.y = 0
-		self.theta = 0
+		self.x = 0.0
+		self.y = 0.0
+		self.theta = 0.0
 		
 		#rospy.Publisher('mode', String)
 
 		# service readTemp
 		print "Initialising Temperature client"
-		#self.sense_dht22 = rospy.ServiceProxy('dht22_ask_temperature', AskTemperature)	
+		# self.sense_dht22 = rospy.ServiceProxy('dht22_ask_temperature', AskTemperature)	
 		
 		print "Initialising ActionClient"
 		# actionlin simpleMove
@@ -47,47 +54,58 @@ class ActivityManager(object):
 	def actual_coord_callback(self,data):
 		self.x = data.feedback.base_position.pose.position.x
 		self.y = data.feedback.base_position.pose.position.y
-		self.theta = 0#data.feedback.base_position.pose.position.z
+		self.theta = 0.0#data.feedback.base_position.pose.position.z
 	
 	def where_am_i(self):
 		# where are you
-		return  str(self.x) + ", "+str(self.y)+", "+ str(self.theta)
+		position = {}
+		position['current_position']={'x' : str(self.x), 'y': str(self.y), 'theta': str(self.theta)}
+		json_pos = json.dumps(position)
+		return  json_pos #str(self.x) + ", "+str(self.y)+", "+ str(self.theta)
 						
 	def cancel_goal(self):
-		self.simple_action_client.cancel_all_goals() 
+		#self.simple_action_client.cancel_all_goals() 
 		print "I am stopping..."
+		self.plan_stack = []
+
 	
 	def is_idle(self):
-		if self.current_plan == None: return False
-		else: return False
+		if len(self.plan_stack) == 0: 
+			# then it is doing nothing
+			return False
+		else: 
+			return True
 
 	def execute(self,action):
 		if action['name'] == "goto":
 			self.goto(action)		
 		elif 'temp' in action['name']:
 			temp = self.read_temperature()
-			print self.update_temperature(temp)
+			self.update('temperature',temp)
 		elif "wifi" in action['name']:
 			self.sniff_wifi(action['iface'])
 		elif "humidity" in action['name']:
 			humidity = self.read_humidity()
-			self.update_humidity(humidity)
+			self.update('humidity',humidity)
 		else : print "Sorry %s not recognised" %action
+		print "Executed %s" % str(action)
+		time.sleep(2)
 	
-	def execute_plan(self,plan):
-            	print  "Creating plan %s" % plan
-		self.current_plan = plan
-
-		self.plan_stack = json.loads(plan)
+	def execute_plan(self):
+            	#print  "Creating plan %s" % plan
+		#self.current_plan = plan
+		#self.plan_stack = json.loads(plan)
 	
 		while len(self.plan_stack) > 0:
 			self.current_action = self.plan_stack[0]
 			print "Current action %s" % self.current_action['name']
-			del self.plan_stack[0] 
+			#del self.plan_stack[0] 
 			time.sleep(1)
 			self.execute(self.current_action)
-
+			del self.plan_stack[0] 
+	
 	def goto(self,coords):
+		
 		goal = MoveBaseGoal()
    		
 		#set goal
@@ -95,13 +113,10 @@ class ActivityManager(object):
     		goal.target_pose.pose.position.y = float(coords['y'])
     		goal.target_pose.pose.orientation.z = math.sin(math.radians(float(coords['t']))/2)
     		goal.target_pose.pose.orientation.w = math.cos(math.radians(float(coords['t']))/2)
-
     		goal.target_pose.header.frame_id = 'map'
     		goal.target_pose.header.stamp = rospy.Time.now()
-
     		#start listener
     		self.simple_action_client.wait_for_server()
-
    		#send goal
     		self.simple_action_client.send_goal(goal)
 		
@@ -109,9 +124,16 @@ class ActivityManager(object):
 		self.simple_action_client.wait_for_result(rospy.Duration.from_sec(360.0))
 		
 		print "Action CLient Result "+ str(self.simple_action_client.get_result()) 
+		
 		print "Going to %s, %s, %s" % (coords['x'],coords['y'], coords['t'])
+		# self.x = int(coords['x'])
+  #              self.y = int(coords['y'])
+  #              self.theta = int(coords['t'])
+		# print "Waiting 3 secs"
+		# time.sleep(3)
 
 	def sniff_wifi(self,interface):
+		
 		cells = list()
 	        os.system("sudo iwlist %s scan > wifi.txt" % interface)
         	fopen = codecs.open("wifi.txt", "r", "utf-8")
@@ -130,10 +152,12 @@ class ActivityManager(object):
                         	wifi['name']=line.strip()[7:-1]
         	os.system("rm wifi.txt")
         	wifi_json=json.dumps(cells, sort_keys=True, indent= 2, separators=(",",":"))
-		print wifi_json
+		print wifi_json # TODO agree on return
 		return wifi_json		
+		
 
 	def read_temperature(self):
+		return "40" # TODO remove temp
     		try:
         		response = self.sense_dht22('[TEMP]')
         		return response.reply.temperature
@@ -141,20 +165,34 @@ class ActivityManager(object):
         		print "Service call failed: %s"%e
         
 	def read_humidity(self):
+		return "40" # TODO remove temp
                 try:
                         response = self.sense_dht22('[TEMP]')
                         return response.reply.humidity
                 except rospy.ServiceException, e:
                         print "Service call failed: %s"%e
 	
-	def update_humidity(self,hum):
-		print hum
-		# TODO : json and curl -post to dka 
+	def update(self,field,value):
+		print field,':',value
+		params = {'field': field, 'value': value, 'x': self.x, 'y': self.y, 'theta': self.theta}
+		params_json = json.dumps(params, sort_keys=True, indent= 2, separators=(",",":"))
+		params_encoded = urllib.urlencode({'d': params_json})
+		try:
+			print "update, open connection." 
+			#req = requests.post("http://137.108.127.33:8080/bot/write", data=params_encoded)
+			#print req.text,req.status_code
+			f = urllib.urlopen("http://137.108.127.33:8080/bot/write", params_encoded)
+			print f.getcode()
+			f.close()
+			print "update, close connection."
+			return True
+		
+		except IOError, e:
+			print "Error %s" %str(e)
+			return False 
+		
 
-	def update_temperature(self,temp):
-		print temp
-		# TODO : json and curl -post to dka 
-
+import threading
 from flask import Flask, request
 app = Flask(__name__)
 activity_manager = ActivityManager()
@@ -163,35 +201,63 @@ activity_manager = ActivityManager()
 def index():
 	return 'Please specify action\n'
 
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
+
 @app.route('/whereareyou', methods = ["GET"])
 def where_are_you():
 	if request.method == 'GET':
 		# where are you
-		return "Current position: %s\n" % activity_manager.where_am_i()
+		return '%s\n' % activity_manager.where_am_i(),200
 
+@app.route('/update', methods = ['POST'])
+def update():
+	# outdated 'field', 'action', 'value', 'x' , 'y'
+	outdated = request.form['p']
+	if update_info(outdated):
+		return "",200
+	else : return 204 # TODO : handle errors
+
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+
+def execute_plan(am):
+	am.execute_plan()
+	
 @app.route('/do', methods=['POST', 'GET','DELETE'])
 def do():
 	if request.method == 'POST':
         	plan = request.form['p']
 		if not activity_manager.is_idle():
-			print plan 
-			activity_manager.execute_plan(plan)
-			return "", 201
+			#activity_manager.execute_plan(plan)
+			activity_manager.current_plan = plan
+                	activity_manager.plan_stack = json.loads(plan)
+			thr = threading.Thread(target=execute_plan, args=(activity_manager,))
+			thr.start()
+			return "Process started: %s.\n" % thr.is_alive(), 201
         	else :
-            		print  "Sorry, I am busy"
-			return "", 406
+            		print  "Sorry, I am busy."
+			return "Idle.\n", 406 # idle
     	elif request.method == 'DELETE':
 		activity_manager.cancel_goal()
-         	return "",204 
+         	return "",204
     	else :
         	# it is GET
         	if not activity_manager.is_idle():
 			print "Doing nothing."
-            		return '',204 
+            		return 'Doing nothing\n',204 
         	else : 
 			print "Remaining %s" % activity_manager.plan_stack 
-			return activity_manager.plan_stack , 200 # TODO : return last action and Id
+			resp = str(activity_manager.current_action)
+			resp = resp.replace("u'", "'")
+			return resp+"\n", 200 
 	
 if __name__ == '__main__':
 	print "Starting server"
-	app.run(debug=True, use_reloader=False, host='0.0.0.0')
+	app.run(debug=True,use_reloader=False,threaded=True, host='0.0.0.0')
