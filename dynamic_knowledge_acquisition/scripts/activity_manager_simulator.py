@@ -14,6 +14,7 @@ import codecs
 from move_base_msgs.msg import *
 import actionlib
 import urllib,urllib2
+import requests
 from temperature_node.msg import *
 from temperature_node.srv import *
 
@@ -87,7 +88,8 @@ class ActivityManager(object):
 			humidity = self.read_humidity()
 			self.update('humidity',humidity)
 		else : print "Sorry %s not recognised" %action
-		time.sleep(20)
+		print "Executed %s" % str(action)
+		time.sleep(2)
 	
 	def execute_plan(self):
             	#print  "Creating plan %s" % plan
@@ -127,6 +129,9 @@ class ActivityManager(object):
 		print "Action CLient Result "+ str(self.simple_action_client.get_result()) 
 		"""
 		print "Going to %s, %s, %s" % (coords['x'],coords['y'], coords['t'])
+		self.x = int(coords['x'])
+                self.y = int(coords['y'])
+                self.theta = int(coords['t'])
 		print "Waiting 3 secs"
 		time.sleep(3)
 
@@ -153,7 +158,6 @@ class ActivityManager(object):
 		print wifi_json # TODO agree on return
 		return wifi_json		
 		
-		print 'hello'
 
 	def read_temperature(self):
     		try:
@@ -173,14 +177,17 @@ class ActivityManager(object):
 		print field,':',value
 		params = {'field': field, 'value': value, 'x': self.x, 'y': self.y, 'theta': self.theta}
 		params_json = json.dumps(params, sort_keys=True, indent= 2, separators=(",",":"))
-		print "a"
 		params_encoded = urllib.urlencode({'d': params_json})
 		try:
-			print "open" 
-			f = urllib.urlopen("http://137.108.118.5:8080/bot/write", params_encoded)
-			print "clo"
-			print "Updated response...",f.read()
+			print "update, open connection." 
+			#req = requests.post("http://137.108.127.33:8080/bot/write", data=params_encoded)
+			#print req.text,req.status_code
+			f = urllib.urlopen("http://137.108.127.33:8080/bot/write", params_encoded)
+			print f.getcode()
+			f.close()
+			print "update, close connection."
 			return True
+		
 		except IOError, e:
 			print "Error %s" %str(e)
 			return False 

@@ -34,7 +34,7 @@ class ActivityManager(object):
 
 		# service readTemp
 		print "Initialising Temperature client"
-		self.sense_dht22 = rospy.ServiceProxy('dht22_ask_temperature', AskTemperature)	
+		#self.sense_dht22 = rospy.ServiceProxy('dht22_ask_temperature', AskTemperature)	
 		
 		print "Initialising ActionClient"
 		# actionlin simpleMove
@@ -149,9 +149,11 @@ class ActivityManager(object):
 	
 	def update_humidity(self,hum):
 		print hum
+		# TODO : json and curl -post to dka 
 
 	def update_temperature(self,temp):
 		print temp
+		# TODO : json and curl -post to dka 
 
 from flask import Flask, request
 app = Flask(__name__)
@@ -161,11 +163,11 @@ activity_manager = ActivityManager()
 def index():
 	return 'Please specify action\n'
 
-@app.route('/whereAreYou', methods = ["GET"])
+@app.route('/whereareyou', methods = ["GET"])
 def where_are_you():
 	if request.method == 'GET':
 		# where are you
-		return "Look! I am %s\n" % activity_manager.where_am_i()
+		return "Current position: %s\n" % activity_manager.where_am_i()
 
 @app.route('/do', methods=['POST', 'GET','DELETE'])
 def do():
@@ -188,7 +190,7 @@ def do():
             		return '',204 
         	else : 
 			print "Remaining %s" % activity_manager.plan_stack 
-			return activity_manager.plan_stack , 200
+			return activity_manager.plan_stack , 200 # TODO : return last action and Id
 	
 if __name__ == '__main__':
 	print "Starting server"
