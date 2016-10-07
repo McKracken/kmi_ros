@@ -1,0 +1,126 @@
+<launch>
+
+  <arg name="robot_name" default="robot_0" />
+  <arg name="map_name" default="DISB1" />
+  <arg name="map_server" default="true" />
+  <arg name="initial_pose_x" default="0.0" />
+  <arg name="initial_pose_y" default="0.0" />
+  <arg name="initial_pose_a" default="0.0" />
+  <arg name="use_amcl" default="false" />
+  <arg name="use_glocalizer" default="false" />
+  <arg name="use_move_base" default="false" />
+  <arg name="use_gradient_based_navigation" default="false" />
+  <arg name="base_frame" default="base_frame" />
+  <arg name="laser_topic" default="scan" />
+  <arg name="laser_frame" default="laser_frame" />
+
+  <group if="$(arg map_server)">
+    <node pkg="map_server" type="map_server" name="map_server" args="$(find stage_environments)/maps/$(arg map_name).yaml" respawn="false" >
+      <param name="frame_id" value="/map" />
+    </node>
+  </group>
+  
+  <group ns="$(arg robot_name)">
+    <param name="robot_name" value="$(arg robot_name)" />
+    <param name="tf_prefix" value="$(arg robot_name)" />
+
+
+    <!-- AMCL -->
+    
+    <group if="$(arg use_amcl)">
+    
+	<node pkg="amcl" type="amcl" name="amcl" respawn="true">
+    
+	  <remap from="scan" to="$(arg laser_topic)"/>
+	  <remap from="static_map" to="/static_map" />
+
+	  <!-- Default parameters -->
+	  <rosparam file="$(find stage_environments)/config/$(arg robot_name)/localization/amcl.yaml" command="load" />
+	  
+	  <!-- Override Params to include prefix -->
+	  <param name="base_frame_id" value="/$(arg robot_name)/base_frame"/>
+	  <param name="odom_frame_id" value="/$(arg robot_name)/odom"/>
+	  <param name="global_frame_id" value="/map"/> <!--common map frame for all robots -->
+
+	  <!-- Set initial pose -->
+	  <param name="initial_pose_x" value="$(arg initial_pose_x)" />
+	  <param name="initial_pose_y" value="$(arg initial_pose_y)" />
+	  <param name="initial_pose_a" value="$(arg initial_pose_a)" />
+	  <param name="initial_cov_xx" value="0.25" />
+	  <param name="initial_cov_yy" value="0.25" />
+	  <param name="initial_cov_aa" value="0.25" />
+	
+	</node>
+
+    </group>
+    
+    
+    <!-- glocalizer -->
+    
+    <group if="$(arg use_glocalizer)">
+	<node name="glocalizer" pkg="glocalizer" type="glocalizer_node" output="screen">
+
+	    <remap from="static_map" to="/static_map" />
+	    <param name="particles" type="int" value="5000"/>
+
+	    <!-- Override Frame Params to include prefix -->
+	    <param name="laser_topic" value="$(arg laser_topic)"/>
+	    <param name="base_frame_id" value="$(arg robot_name)/base_frame"/>
+	    <param name="odom_frame_id" value="$(arg robot_name)/odom"/>
+	    <param name="global_frame_id" value="/map"/> <!--common map frame for all robots -->
+
+	    <!-- Set initial pose -->
+	    <param name="initial_pose_x" value="$(arg initial_pose_x)" />
+	    <param name="initial_pose_y" value="$(arg initial_pose_y)" />
+	    <param name="initial_pose_a" value="$(arg initial_pose_a)" />
+	    <param name="initial_cov_xx" value="0.25" />
+	    <param name="initial_cov_yy" value="0.25" />
+	    <param name="initial_cov_aa" value="0.25" />
+	</node>
+    </group>
+
+
+    <!-- move_base -->
+
+    <group if="$(arg use_move_base)">
+        <node pkg="move_base" type="move_base" respawn="false" name="move_base_node" output="screen">
+		<remap from="map" to="/map" />
+		<remap from="odom" to="odom" />
+		<remap from="cmd_vel" to="cmd_vel" />
+
+		<rosparam file="$(find stage_environments)/config/$(arg robot_name)/navigation/move_base_params.yaml" command="load" />
+		<rosparam file="$(find stage_environments)/config/$(arg robot_name)/navigation/costmap_common_params.yaml" command="load" ns="global_costmap" />
+		<rosparam file="$(find stage_environments)/config/$(arg robot_name)/navigation/costmap_common_params.yaml" command="load" ns="local_costmap" />
+		<rosparam file="$(find stage_environments)/config/$(arg robot_name)/navigation/local_costmap_params.yaml" command="load" />
+		<rosparam file="$(find stage_environments)/config/$(arg robot_name)/navigation/global_costmap_params.yaml" command="load" />
+		<rosparam file="$(find stage_environments)/config/$(arg robot_name)/navigation/base_local_planner_params.yaml" command="load" />
+		
+		<!-- Override MOVE_BASE Frame Params to include prefix -->
+		<param name="global_costmap/laser_scan_sensor/sensor_frame" value="/$(arg robot_name)/$(arg laser_frame)"/>
+		<param name="global_costmap/laser_scan_sensor/topic" value="/$(arg robot_name)/$(arg laser_topic)"/>
+		<param name="global_costmap/robot_base_frame" value="/$(arg robot_name)/$(arg base_frame)"/>   
+		<param name="local_costmap/global_frame" value="/$(arg robot_name)/odom"/>
+		<param name="local_costmap/laser_scan_sensor/sensor_frame" value="/$(arg robot_name)/$(arg laser_frame)"/>
+		<param name="local_costmap/laser_scan_sensor/topic" value="/$(arg robot_name)/$(arg laser_topic)"/>
+		<param name="local_costmap/robot_base_frame" value="/$(arg robot_name)/$(arg base_frame)"/> 
+	</node>
+    </group>
+    
+
+    <!-- gradient_based_navigation -->
+    
+    <group if="$(arg use_gradient_based_navigation)">
+      <node pkg="gradient_based_navigation" name="gradient_based_navigation" type="gradient_based_navigation" args="80"  output="screen">
+	<remap from="base_scan" to="$(arg laser_topic)" />
+	<param name="laser_frame" value="/$(arg robot_name)/$(arg laser_frame)" />
+	<param name="GUI" value="true" />
+	<param name="attractiveDistanceInfluence_m" value="0.5" />
+	<param name="obstaclesDistanceInfluence_m" value="1.0" />
+      </node>
+    </group>
+
+    
+  </group>
+
+</launch>
+

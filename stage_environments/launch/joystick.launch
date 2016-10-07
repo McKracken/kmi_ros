@@ -1,0 +1,18 @@
+<launch>
+	<arg name="robot_name" default="robot_0" />
+	<arg name="cmd_vel_topic" default="joystick_cmd_vel" />
+	
+	<group ns="$(arg robot_name)">
+	
+	    <node pkg="joy" type="joy_node" name="joy" output="screen">
+		<param name="dev" type="string" value="/dev/input/js0" />
+		<param name="deadzone" value="0.12" />
+	    </node>
+	    
+	    <node pkg="gradient_based_navigation" name="joystick_control" type="joystick_control" output="screen">
+		<remap from="joystick_cmd_vel" to="/$(arg robot_name)/$(arg cmd_vel_topic)" />
+	    </node>
+	    
+	</group>
+		
+</launch>

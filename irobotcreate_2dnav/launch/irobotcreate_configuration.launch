@@ -9,5 +9,6 @@
         <param name="publish_pointcloud" value="1" type="int"/>
         <param name="base_frame" value="base_link" type="string"/>
   </node>
-  <node pkg="irobotcreate2" type="irobotcreate2_our" name="irobotcreate2" output="screen" />
+  <node pkg="irobotcreate2" type="irobotcreate2_our" name="irobotcreate2" output="screen" /> 
+
 </launch>
