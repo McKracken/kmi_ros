@@ -1,0 +1,4 @@
+digraph G {
+"odom" -> "base_link"[label="Broadcaster: /roomba560_node\nAverage rate: 50.202 Hz\nMost recent transform: 1478616884.163 \nBuffer length: 4.940 sec\n"];
+"base_link" -> "peeno"[label="Broadcaster: /static_transform_publisher_1478616874762563560\nAverage rate: 20.160 Hz\nMost recent transform: 1478616884.193 \nBuffer length: 4.861 sec\n"];
+}

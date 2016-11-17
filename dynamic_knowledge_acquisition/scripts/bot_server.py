@@ -4,7 +4,6 @@
 # simulator without the robot
 #####
 
-
 import rospy
 import time
 import json
@@ -22,6 +21,7 @@ import tf
 
 _KB_SERVER_IP = "http://127.0.0.1"
 _ACTION_CLIENT_MAX_DURATION = 360.0
+
 class ActivityManager(object):
 	
 	def __init__(self):
@@ -143,20 +143,25 @@ class ActivityManager(object):
 		elif 'temp' in action['name']:
 			temp = self.read_temperature()
 			self.update('temperature',temp)
+			#time.sleep(0.5)
 		elif "wifi" in action['name']:
 			wifis = self.sniff_wifi(action['iface'])
-			# getting eduroam strenght
+
 			for wifi in wifis:
-				if wifi['name'] == "WireCasaLess": #TODO back to eduroam/_The Cloud
+				#if wifi['name'] == "WireCasaLess": #TODO back to eduroam/_The Cloud
+				if wifi['name'] == "eduroam":
 					signal_digit = wifi['signal'].split()[0]
 					self.update("wifi",signal_digit)	
+					#time.sleep(0.5)
 					break
 		elif "humidity" in action['name']:
 			humidity = self.read_humidity()
 			self.update('humidity',humidity)
+			#time.sleep(0.5)
 		elif "count_people" in action['name']:
 			people_count = self.count_people()
 			self.update('count_people',people_count)
+			#time.sleep(0.5)
  		else : 
 			print "Sorry, action %s not recognised" %action
 #		print "%s action done" % str(action)
@@ -264,7 +269,7 @@ class ActivityManager(object):
 			#req = requests.post("http://137.108.127.33:8080/bot/write", data=params_encoded)
 			#print req.text,req.status_code
 			url = "%s:8080/bot/write" % _KB_SERVER_IP
-			print "Update, openning connection with %s" % url
+			print "Update, opening connection with %s" % url
 			print "Updating %s with value %s" % (field, value)
 			f = urllib.urlopen(url, params_encoded)
 			#print f.getcode()
@@ -383,5 +388,4 @@ def do():
 			return resp+"\n", 200 
 	
 if __name__ == '__main__':
-	print "Starting server"
 	app.run(debug=True,use_reloader=False,threaded=True, host='0.0.0.0')

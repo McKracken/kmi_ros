@@ -1,0 +1,35 @@
+<launch>
+  <master auto="start"/>
+
+  <param name="/use_sim_time" value="true"/>
+  
+  <!-- Run stage simulator -->
+  <node pkg="stage_ros" type="stageros" name="stageros" args="/home/bender/Projects/ros/indigo/kmi_catkin_workspace/src/kmi_navigation/maps/north_wing_complete_3_border.world" respawn="false" output="screen">
+    <param name="base_watchdog_timeout" value="0.2"/>
+    <remap from="/base_scan" to="/scan" />
+  </node>
+
+  <!-- Run the map server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="/home/bender/Projects/ros/indigo/kmi_catkin_workspace/src/kmi_navigation/maps/north_wing_complete_3_border.yaml" />
+
+  <!--- Run AMCL -->
+  <include file="$(find kmi_localisation)/launch/amcl.launch">
+	<arg name="initial_pose_x"  value="0"/>
+    	<arg name="initial_pose_y"  value="0"/>
+	<arg name="initial_pose_a"  value="0"/>
+ 
+    	<arg name="scan_topic"      value="/scan"/>
+    	<arg name="odom_frame_id"   value="odom"/>
+    	<arg name="base_frame_id"   value="base_link"/>
+    	<arg name="global_frame_id" value="map"/>
+  </include>
+
+  <!-- run move_base -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find sim_robot_2dnav)/configs/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find sim_robot_2dnav)/configs/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find sim_robot_2dnav)/configs/local_costmap_param.yaml" command="load" />
+    <rosparam file="$(find sim_robot_2dnav)/configs/global_costmap_param.yaml" command="load" />
+    <rosparam file="$(find sim_robot_2dnav)/configs/stage_base_local_planner_params.yaml" command="load" />
+  </node>
+</launch>

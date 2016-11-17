@@ -19,14 +19,16 @@ from temperature_node.srv import *
 import random
 import tf
 
-_KB_SERVER_IP = "http://127.0.0.1"
-_ACTION_CLIENT_MAX_DURATION = 360.0
-
 class ActivityManager(object):
 	
-	def __init__(self):
+	def __init__(self,kb_server_ip,kb_server_port,wifiname):
 		print "Initialising node"
 		# initnode 
+		self.KB_SERVER_IP = kb_server_ip
+		self.KB_SERVER_PORT = kb_server_port
+		self.wifiname = wifiname
+		self.ACTION_CLIENT_MAX_DURATION = 360.0
+
 		rospy.init_node('activity_manager')
 		#rospy.wait_for_service('dht22_ask_temperature')
 		self.listener = tf.TransformListener()		
@@ -103,7 +105,7 @@ class ActivityManager(object):
 	def cancel_goal(self):
 		print "I am stopping..."
 		self.simple_action_client.cancel_all_goals()
-		self.simple_action_client.wait_for_result(rospy.Duration.from_sec(_ACTION_CLIENT_MAX_DURATION))
+		self.simple_action_client.wait_for_result(rospy.Duration.from_sec(self.ACTION_CLIENT_MAX_DURATION))
 		
 		cur_simpleclient_state = self.simple_action_client.get_state()
 		simpleclient_state_string = self.get_simpleclient_state(cur_simpleclient_state)	
@@ -138,30 +140,30 @@ class ActivityManager(object):
 		if action['name'] == "goto":
 			self.goto(action)
 			#print "I should start wait here for action %s" % action
-			self.simple_action_client.wait_for_result(rospy.Duration.from_sec(_ACTION_CLIENT_MAX_DURATION))
+			self.simple_action_client.wait_for_result(rospy.Duration.from_sec(self.ACTION_CLIENT_MAX_DURATION))
 			#print "And now I finish my wait for action %s" % action
 		elif 'temp' in action['name']:
 			temp = self.read_temperature()
 			self.update('temperature',temp)
-			time.sleep(3)
+			#time.sleep(0.5)
 		elif "wifi" in action['name']:
 			wifis = self.sniff_wifi(action['iface'])
 
 			for wifi in wifis:
 				#if wifi['name'] == "WireCasaLess": #TODO back to eduroam/_The Cloud
-				if wifi['name'] == "eduroam":
+				if wifi['name'] == wifiname:
 					signal_digit = wifi['signal'].split()[0]
 					self.update("wifi",signal_digit)	
-					time.sleep(3)
+					#time.sleep(0.5)
 					break
 		elif "humidity" in action['name']:
 			humidity = self.read_humidity()
 			self.update('humidity',humidity)
-			time.sleep(3)
+			#time.sleep(0.5)
 		elif "count_people" in action['name']:
 			people_count = self.count_people()
 			self.update('count_people',people_count)
-			time.sleep(3)
+			#time.sleep(0.5)
  		else : 
 			print "Sorry, action %s not recognised" %action
 #		print "%s action done" % str(action)
@@ -185,7 +187,6 @@ class ActivityManager(object):
 				break
 	
 	def goto(self,coords):
-		global _ACTION_CLIENT_MAX_DURATION
 		print "Going to %s, %s, %s" % (coords['x'],coords['y'], coords['t'])
 		goal = MoveBaseGoal()
    		
@@ -268,7 +269,7 @@ class ActivityManager(object):
 		try:
 			#req = requests.post("http://137.108.127.33:8080/bot/write", data=params_encoded)
 			#print req.text,req.status_code
-			url = "%s:8080/bot/write" % _KB_SERVER_IP
+			url = "%s:%s/bot/write" % (self.KB_SERVER_IP,self.KB_SERVER_PORT)
 			print "Update, opening connection with %s" % url
 			print "Updating %s with value %s" % (field, value)
 			f = urllib.urlopen(url, params_encoded)
@@ -299,93 +300,3 @@ class ActivityManager(object):
 				print "%s - %s" % (i,action)
 			i += 1
 		print ""
-
-import threading
-import sys
-from flask import Flask, request
-
-if len(sys.argv) > 1:
-	_KB_SERVER_IP = sys.argv[1]
-
-app = Flask(__name__)
-activity_manager = ActivityManager()
-
-@app.route('/')
-def index():
-	return 'Please specify action\n'
-
-@app.route('/shutdown', methods=['POST'])
-def shutdown():
-    shutdown_server()
-    return 'Server shutting down...'
-
-@app.route('/whereareyou', methods = ["GET"])
-def where_are_you():
-	if request.method == 'GET':
-		# where are you
-		return '%s\n' % activity_manager.where_am_i(),200
-
-@app.route('/currentplan', methods = ["GET"])
-def get_current_paln():
-        if request.method == 'GET':
-                # get plan
-		if len(activity_manager.current_plan) > 0:
-	                return '%s\n' % activity_manager.current_plan,200
-		else:
-			return '[]\n', 200
-
-@app.route('/update', methods = ['POST'])
-def update():
-	# outdated 'field', 'action', 'value', 'x' , 'y'
-	outdated = request.form['p']
-	if update_info(outdated):
-		return "",200
-	else : return 204 # TODO : handle errors
-
-
-def shutdown_server():
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
-
-def execute_plan(am):
-	am.execute_plan()
-	
-@app.route('/do', methods=['POST', 'GET','DELETE'])
-def do():
-	if request.method == 'POST':
-        	plan = request.form['p']
-		if not activity_manager.is_idle():
-			#activity_manager.execute_plan(plan)
-			activity_manager.current_plan = plan
-			if plan == "]":
-				print "Unfeasible plan"
-				return "",204
-			else:
-	                	activity_manager.plan_stack = json.loads(plan)
-				print "PLAN STACK: %s" % activity_manager.plan_stack
-				activity_manager.plan_pretty_print()
-				thr = threading.Thread(target=execute_plan, args=(activity_manager,))
-				thr.start()
-				return "Process started: %s.\n" % thr.is_alive(), 201
-        	else :
-            		print  "Sorry, I am busy."
-			return "Idle.\n", 406 # idle
-    	elif request.method == 'DELETE':
-		activity_manager.cancel_goal()
-         	return "",204
-    	else :
-        	# it is GET
-        	if not activity_manager.is_idle():
-			print "Doing nothing."
-            		return 'Doing nothing\n',204 
-        	else : 
-			#print "Remaining %s" % activity_manager.plan_stack
-			resp = str(activity_manager.current_action)
-			resp = resp.replace("u'", "'")
-			resp = resp.replace("'","\"")
-			return resp+"\n", 200 
-	
-if __name__ == '__main__':
-	app.run(debug=True,use_reloader=False,threaded=True, host='0.0.0.0')
