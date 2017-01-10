@@ -1,4 +1,8 @@
 digraph G {
-"odom" -> "base_link"[label="Broadcaster: /roomba560_node\nAverage rate: 50.202 Hz\nMost recent transform: 1478616884.163 \nBuffer length: 4.940 sec\n"];
-"base_link" -> "peeno"[label="Broadcaster: /static_transform_publisher_1478616874762563560\nAverage rate: 20.160 Hz\nMost recent transform: 1478616884.193 \nBuffer length: 4.861 sec\n"];
+"odom" -> "base_link"[label="Broadcaster: /roomba560_node\nAverage rate: 50.153 Hz\nMost recent transform: 1480960044.375 ( 0.020 sec old)\nBuffer length: 4.985 sec\n"];
+"base_link" -> "scan"[label="Broadcaster: /static_transform_publisher_1480959519661480519\nAverage rate: 10.192 Hz\nMost recent transform: 1480960044.445 ( -0.050 sec old)\nBuffer length: 4.906 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1480960044.395"[ shape=plaintext ] ;
+ }->"odom";
 }
