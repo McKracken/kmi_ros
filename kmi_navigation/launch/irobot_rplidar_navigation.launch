@@ -1,7 +1,7 @@
 <launch>
   <master auto="start"/>
- <!-- <arg name="map" dafault="north-south-wings+podium_merge.yaml" /> -->
   
+
   <!-- Run the robot  -->
   <node name="irobotcreate2" pkg="irobotcreate2" type="irobotcreate2_our" output="screen"/>
 
