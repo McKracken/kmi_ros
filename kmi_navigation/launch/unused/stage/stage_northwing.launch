@@ -1,0 +1,16 @@
+<launch>
+
+  <!--<arg name="map_name" default="DIAG_B1" />-->
+  <param name="/use_sim_time" value="true"/>
+  
+  <node pkg="stage_ros" type="stageros" name="stageros" args="/home/bender/Projects/ros/indigo/kmi_catkin_workspace/src/kmi_navigation/maps/north_wing_complete_3_border.world" respawn="false" output="screen">
+    
+    <param name="base_watchdog_timeout" value="0.2"/>
+    <remap from="/base_scan" to="/scan" />
+    <!-- <param name="base_frame" value="base_link"/> -->
+    <!-- <param name="laser_topic" value="/scan"/> -->
+    <!-- <param name="laser_frame" value="base_laser_link"/> -->
+
+  </node>
+
+</launch>

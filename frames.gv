@@ -1,5 +1,0 @@
-digraph G {
-"odom" -> "base_link"[label="Broadcaster: /roomba560_node\nAverage rate: 50.226 Hz\nMost recent transform: 1484838347.183 \nBuffer length: 4.958 sec\n"];
-"map" -> "odom"[label="Broadcaster: /slam_gmapping\nAverage rate: 20.204 Hz\nMost recent transform: 1484838347.211 \nBuffer length: 4.900 sec\n"];
-"base_link" -> "laser"[label="Broadcaster: /static_transform_publisher_1484838257592019683\nAverage rate: 10.196 Hz\nMost recent transform: 1484838347.283 \nBuffer length: 4.904 sec\n"];
-}
