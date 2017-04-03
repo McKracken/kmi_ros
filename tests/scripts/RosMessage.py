@@ -76,6 +76,7 @@ class RosMessage(object):
 				except genmsg.msg_loader.MsgNotFound as e:
 					print "Message %s not found" % msg_field_type
 					pass
+					
 	def get_complete_type(self):
 		if self.is_array:
 			return "%s[]" % self.msg_type

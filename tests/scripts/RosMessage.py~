@@ -69,13 +69,7 @@ class RosMessage(object):
 					for array_part in array_parts:
 						msg_field_type = msg_field_type.replace(array_part,"")
 					array = True
-					
-
-
-				if msg_field_type.endswith("[]"):
-					msg_field_type = msg_field_type.replace("[]","")
-					array = True
-
+				
 				try:
 					msg_field = RosMessage(msg_field_type, self.used_by_topic, msg_field_name, is_array=array)
 					self.fields[msg_field_name] = msg_field

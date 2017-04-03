@@ -26,15 +26,16 @@ if __name__ == "__main__":
 	topics = rospy.get_published_topics("/")
 	context = genmsg.MsgContext.create_default()
 
-	rospack = rospkg.RosPack()
-    	search_path = {}
-    	for p in rospack.list():
-        	package_paths = _get_package_paths(p, rospack)
-        	search_path[p] = [os.path.join(d, 'msg') for d in package_paths]
+	#rospack = rospkg.RosPack()
+	#search_path = {}
+	#for p in rospack.list():
+	#	package_paths = _get_package_paths(p, rospack)
+	#	search_path[p] = [os.path.join(d, 'msg') for d in package_paths]
 	
 	msgs = {}
 
 	for topic in topics:
+		print "Topic %s" % topic
 		t = topic[0]
 		msg = topic[1]
 		
@@ -66,9 +67,9 @@ if __name__ == "__main__":
 
 	msg = to_send[:len(to_send)-1]
 	
-	#print "Sending %s" % msg
+	"""print "Sending %s" % msg
 
-	req = requests.get("http://localhost:8080/onto-rob-server/capabilities", params={"msgs":msg})
+	req = requests.get("http://localhost:5050/onto-rob-server/capabilities", params={"msgs":msg})
 	caps = req.text.split("\n")
 	caps_dic = {}
 
@@ -78,7 +79,7 @@ if __name__ == "__main__":
 			caps_dic[cap[cap.index("#")+1:]] = True
 
 	for cap in caps_dic.keys():
-		print cap
+		print cap"""
 	
 	
 		#break
