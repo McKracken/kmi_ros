@@ -1,0 +1,6 @@
+<launch>
+
+<node pkg="dynamic_knowledge_acquisition" name="robot_server" type="robot_server.py" output="screen">
+     <param name="w" type="string" value="eduroam"/>
+</node>
+</launch>

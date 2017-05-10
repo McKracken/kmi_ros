@@ -1,0 +1,4 @@
+ [Loading /home/ilaria/kmi_catkin_ws/src/kmi_ros/kmi_navigation/maps/north_wing_complete_3_border.world][Include urg.inc][Include erratic_small.inc]
+[44mwarn[0m: worldfile /home/ilaria/kmi_catkin_ws/src/kmi_ros/kmi_navigation/maps/north_wing_complete_3_border.world:22 : property [laser_return] is defined but not used (/tmp/buildd/ros-indigo-stage-4.1.1-4trusty-20150424-0404/libstage/worldfile.cc WarnUnused)
+[0m[ INFO] [1489753749.909788046]: Found 1 laser devices and 0 cameras in robot 0[0m
+Stage: User closed window
