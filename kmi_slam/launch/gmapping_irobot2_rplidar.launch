@@ -1,0 +1,25 @@
+<launch>
+  <master auto="start"/>
+  
+  
+  <!-- Run the robot  -->
+  <node name="irobotcreate2" pkg="irobotcreate2" type="irobotcreate2_our" output="screen"/>
+
+  
+  <!-- Run the rplidar node  -->
+  <node name="rplidarNode"          pkg="rplidar_ros"  type="rplidarNode" output="screen">
+  	<param name="serial_port"         type="string" value="/dev/rplidar"/>
+  	<param name="serial_baudrate"     type="int"    value="115200"/>
+  	<param name="frame_id"            type="string" value="laser"/>
+  	<param name="inverted"            type="bool"   value="false"/>
+  	<param name="angle_compensate"    type="bool"   value="true"/>
+  </node>
+  
+  <!-- static transform base_link to laser-->
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_scan_broadcaster" args="0 0 0 0 0 0 base_link laser 100"/>
+
+  <!-- run the slam with gmapping-->
+  <include file="$(find kmi_navigation)/launch/slam.launch"/>
+
+</launch>
+
