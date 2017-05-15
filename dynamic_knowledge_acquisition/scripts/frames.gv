@@ -1,6 +1,0 @@
-digraph G {
-"base_link" -> "base_laser_link"[label="Broadcaster: /stageros\nAverage rate: 10.204 Hz\nMost recent transform: 18.100 \nBuffer length: 4.900 sec\n"];
-"base_footprint" -> "base_link"[label="Broadcaster: /stageros\nAverage rate: 10.204 Hz\nMost recent transform: 18.100 \nBuffer length: 4.900 sec\n"];
-"odom" -> "base_footprint"[label="Broadcaster: /stageros\nAverage rate: 10.204 Hz\nMost recent transform: 18.100 \nBuffer length: 4.900 sec\n"];
-"map" -> "odom"[label="Broadcaster: /amcl\nAverage rate: 10.204 Hz\nMost recent transform: 19.100 \nBuffer length: 4.900 sec\n"];
-}

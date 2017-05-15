@@ -39,7 +39,7 @@
 
 #include "keyboard_node.h"
 
-#define MAX_LIN_VEL 0.3//0.05
+#define MAX_LIN_VEL 0.2//0.05
 #define MAX_ANG_VEL 0.7//0.5
 
 int kfd = 0;
