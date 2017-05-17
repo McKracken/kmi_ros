@@ -15,4 +15,5 @@
 		<remap from="camera_image"  to="$(arg cam_image_topic)" />
 		<remap from="camera_info"   to="$(arg cam_info_topic)" />
 	</node>
+	<node name="ar_tag_counter" pkg="ar_tag_counter" type="ar_tag_counter" />
 </launch>
