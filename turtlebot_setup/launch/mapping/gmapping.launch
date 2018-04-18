@@ -1,0 +1,10 @@
+<launch>
+  <arg name="scan_topic"  default="scan" />
+  <arg name="base_frame_id"  default="base_footprint_frame"/>
+  <arg name="odom_frame_id"  default="odom"/>
+  <include file="$(find turtlebot_setup)/launch/includes/gmapping.launch.xml">
+     <arg name="scan_topic"  value="$(arg scan_topic)" />
+     <arg name="base_frame_id"  value="$(arg base_frame_id)" />
+     <arg name="odom_frame_id"  value="$(arg odom_frame_id)" />
+  </include>
+</launch>
